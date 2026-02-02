@@ -1,18 +1,22 @@
 package handler
 
 import (
+	"IronOps/internal/pkg/logger"
+	"IronOps/internal/pkg/response"
 	"IronOps/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 func ListAuditLogsHandler(c *gin.Context) {
 	logs, err := service.ListAuditLogs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logger.Error("ListAuditLogs failed", zap.Error(err))
+		response.ErrorWithStatus(c, http.StatusInternalServerError, response.CodeServerBusy, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, logs)
+	response.Success(c, logs)
 }

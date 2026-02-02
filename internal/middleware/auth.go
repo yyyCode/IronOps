@@ -1,10 +1,12 @@
 package middleware
 
 import (
+	"IronOps/internal/model"
+	"IronOps/internal/pkg/response"
 	"IronOps/internal/service"
 	"net/http"
+
 	"github.com/gin-gonic/gin"
-	"IronOps/internal/model"
 )
 
 // AuthMiddleware simulates authentication by checking X-User header
@@ -13,15 +15,17 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.GetHeader("X-User")
 		if username == "" {
-			// For MVP/Test, if no header, allow for now ONLY if testing? 
+			// For MVP/Test, if no header, allow for now ONLY if testing?
 			// No, strict mode is better for "Platform" feel.
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized - missing X-User header"})
+			response.ErrorWithStatus(c, http.StatusUnauthorized, response.CodeUnauthorized, "unauthorized - missing X-User header")
+			c.Abort()
 			return
 		}
 
 		user, err := service.GetUserByUsername(username)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+			response.ErrorWithStatus(c, http.StatusUnauthorized, response.CodeInvalidToken, "user not found")
+			c.Abort()
 			return
 		}
 
@@ -35,7 +39,8 @@ func RoleMiddleware(allowedRoles ...model.RoleType) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userVal, exists := c.Get("user")
 		if !exists {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			response.ErrorWithStatus(c, http.StatusUnauthorized, response.CodeUnauthorized, "unauthorized")
+			c.Abort()
 			return
 		}
 		user := userVal.(*model.User)
@@ -55,7 +60,8 @@ func RoleMiddleware(allowedRoles ...model.RoleType) gin.HandlerFunc {
 		}
 
 		if !allowed {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+			response.ErrorWithStatus(c, http.StatusForbidden, response.CodeUnauthorized, "forbidden")
+			c.Abort()
 			return
 		}
 		c.Next()

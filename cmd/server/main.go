@@ -1,18 +1,28 @@
 package main
 
 import (
+	"IronOps/internal/config"
 	"IronOps/internal/database"
 	"IronOps/internal/handler"
 	"IronOps/internal/middleware"
 	"IronOps/internal/model"
+	"IronOps/internal/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	r := gin.Default()
+	config.LoadConfig()
+	logger.InitLogger()
 
-	database.InitDB()
+	// Set Gin Mode
+	gin.SetMode(config.GlobalConfig.Server.Mode)
+
+	r := gin.New() // Use New() to skip default logger
+	r.Use(gin.Recovery())
+	r.Use(middleware.LoggerMiddleware())
+
+	database.InitDB(config.GlobalConfig.Database.DSN)
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -53,11 +63,13 @@ func main() {
 		// Alert Rules (Admin/Ops)
 		protected.POST("/alert-rules", middleware.RoleMiddleware(model.RoleOps), handler.CreateAlertRuleHandler)
 		protected.GET("/alert-rules", middleware.RoleMiddleware(model.RoleViewer, model.RoleOps), handler.ListAlertRulesHandler)
+		protected.PUT("/alert-rules/:id", middleware.RoleMiddleware(model.RoleOps), handler.UpdateAlertRuleHandler)
 		protected.DELETE("/alert-rules/:id", middleware.RoleMiddleware(model.RoleAdmin), handler.DeleteAlertRuleHandler)
 
 		// Alert Channels (Admin only)
 		protected.POST("/alert-channels", middleware.RoleMiddleware(model.RoleAdmin), handler.CreateAlertChannelHandler)
 		protected.GET("/alert-channels", middleware.RoleMiddleware(model.RoleAdmin), handler.ListAlertChannelsHandler)
+		protected.PUT("/alert-channels/:id", middleware.RoleMiddleware(model.RoleAdmin), handler.UpdateAlertChannelHandler)
 		protected.DELETE("/alert-channels/:id", middleware.RoleMiddleware(model.RoleAdmin), handler.DeleteAlertChannelHandler)
 
 		// Dashboard Stats
@@ -75,5 +87,5 @@ func main() {
 	// WS Route - Public for now to avoid Auth header issues with standard WebSocket API
 	api.GET("/ws/dashboard", handler.DashboardWSHandler)
 
-	r.Run(":8080")
+	r.Run(":" + config.GlobalConfig.Server.Port)
 }

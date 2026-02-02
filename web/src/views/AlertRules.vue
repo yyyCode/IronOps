@@ -26,9 +26,10 @@
         </el-table-column>
         <el-table-column prop="enabled" label="状态" width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.enabled ? 'success' : 'info'" effect="plain">
-              {{ scope.row.enabled ? '启用' : '禁用' }}
-            </el-tag>
+            <el-switch
+              v-model="scope.row.enabled"
+              @change="(val) => handleToggleEnabled(scope.row, val)"
+            />
           </template>
         </el-table-column>
         <el-table-column prop="description" label="描述" />
@@ -92,7 +93,7 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
-import { getAlertRules, createAlertRule, deleteAlertRule } from '@/api/alert';
+import { getAlertRules, createAlertRule, deleteAlertRule, updateAlertRule } from '@/api/alert';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
 const rules = ref([]);
@@ -132,6 +133,16 @@ const handleCreate = async () => {
     form.description = '';
   } catch (error) {
     ElMessage.error('创建失败');
+  }
+};
+
+const handleToggleEnabled = async (row, newValue) => {
+  try {
+    await updateAlertRule(row.ID, { enabled: newValue });
+    ElMessage.success(newValue ? '规则已启用' : '规则已禁用');
+  } catch (error) {
+    row.enabled = !newValue; // Revert change on error
+    ElMessage.error('状态更新失败');
   }
 };
 

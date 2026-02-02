@@ -30,6 +30,14 @@ export function deleteAlertRule(id) {
   })
 }
 
+export function updateAlertRule(id, data) {
+  return request({
+    url: `/alert-rules/${id}`,
+    method: 'put',
+    data
+  })
+}
+
 // Alert Channels
 export function getAlertChannels() {
   return request({
@@ -50,5 +58,13 @@ export function deleteAlertChannel(id) {
   return request({
     url: `/alert-channels/${id}`,
     method: 'delete'
+  })
+}
+
+export function updateAlertChannel(id, data) {
+  return request({
+    url: `/alert-channels/${id}`,
+    method: 'put',
+    data
   })
 }

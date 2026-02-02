@@ -114,7 +114,12 @@ const initWebSocket = () => {
     // Determine WS protocol (ws or wss) based on current page protocol
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = 'localhost:8080'; // Hardcoded for dev, normally use window.location.host or env var
-    const wsUrl = `${protocol}//${host}/api/v1/ws/dashboard`;
+    
+    // Get username from localStorage as simple token
+    const user = JSON.parse(localStorage.getItem('user'));
+    const token = user ? user.username : '';
+
+    const wsUrl = `${protocol}//${host}/api/v1/ws/dashboard?token=${token}`;
 
     ws = new WebSocket(wsUrl);
 

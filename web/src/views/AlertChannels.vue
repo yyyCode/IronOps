@@ -21,9 +21,10 @@
         </el-table-column>
         <el-table-column prop="enabled" label="状态" width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.enabled ? 'success' : 'info'" effect="plain">
-              {{ scope.row.enabled ? '启用' : '禁用' }}
-            </el-tag>
+            <el-switch
+              v-model="scope.row.enabled"
+              @change="(val) => handleToggleEnabled(scope.row, val)"
+            />
           </template>
         </el-table-column>
         <el-table-column label="操作" width="150">
@@ -67,7 +68,7 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
-import { getAlertChannels, createAlertChannel, deleteAlertChannel } from '@/api/alert';
+import { getAlertChannels, createAlertChannel, deleteAlertChannel, updateAlertChannel } from '@/api/alert';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
 const channels = ref([]);
@@ -114,6 +115,16 @@ const handleCreate = async () => {
     webhookUrl.value = '';
   } catch (error) {
     ElMessage.error('创建失败');
+  }
+};
+
+const handleToggleEnabled = async (row, newValue) => {
+  try {
+    await updateAlertChannel(row.ID, { enabled: newValue });
+    ElMessage.success(newValue ? '渠道已启用' : '渠道已禁用');
+  } catch (error) {
+    row.enabled = !newValue; // Revert change on error
+    ElMessage.error('状态更新失败');
   }
 };
 

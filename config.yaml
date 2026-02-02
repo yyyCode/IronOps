@@ -1,0 +1,6 @@
+server:
+  port: "8080"
+  mode: "debug"
+
+database:
+  dsn: "root:12345678@tcp(10.21.32.13:3306)/ironops?charset=utf8mb4&parseTime=True&loc=Local"

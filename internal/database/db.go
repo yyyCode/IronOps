@@ -3,7 +3,6 @@ package database
 import (
 	"IronOps/internal/model"
 	"fmt"
-	"os"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -11,14 +10,12 @@ import (
 
 var DB *gorm.DB
 
-func InitDB() {
+func InitDB(dsn string) {
 	var err error
 
-	// Default DSN (Data Source Name)
-	// format: user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local
-	dsn := os.Getenv("MYSQL_DSN")
+	// Default DSN logic removed, using configuration provided DSN
 	if dsn == "" {
-		dsn = "root:12345678@tcp(10.21.32.13:3306)/ironops?charset=utf8mb4&parseTime=True&loc=Local"
+		panic("database DSN is empty")
 	}
 
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})

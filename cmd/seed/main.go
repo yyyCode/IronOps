@@ -9,6 +9,7 @@ import (
 	"IronOps/internal/database"
 	"IronOps/internal/model"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -44,7 +45,14 @@ func seedUsers(db *gorm.DB) {
 	}
 
 	for _, u := range users {
-		u.Password = "123456" // Simple password for all
+		// Hash password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+		if err != nil {
+			log.Printf("Failed to hash password for %s: %v", u.Username, err)
+			continue
+		}
+		u.Password = string(hashedPassword)
+
 		var count int64
 		db.Model(&model.User{}).Where("username = ?", u.Username).Count(&count)
 		if count == 0 {
@@ -111,19 +119,19 @@ func seedAlerts(db *gorm.DB) {
 	for i := 0; i < 15; i++ {
 		idx := rand.Intn(len(instances))
 		typeIdx := rand.Intn(len(types))
-		
+
 		alert := model.Alert{
 			InstanceID: instances[idx].ID,
 			Type:       types[typeIdx],
 			Message:    messages[typeIdx],
 			Status:     statuses[rand.Intn(len(statuses))],
 		}
-		// Set CreatedAt manually if needed, but GORM handles it. 
+		// Set CreatedAt manually if needed, but GORM handles it.
 		// To simulate past alerts, we can update it after creation or use specific struct if we want to override.
 		// For now let's just create them.
-		
+
 		db.Create(&alert)
-		
+
 		// Update CreatedAt to spread them out
 		db.Model(&alert).Update("created_at", time.Now().Add(-time.Duration(rand.Intn(72))*time.Hour))
 	}
@@ -137,14 +145,14 @@ func seedAuditLogs(db *gorm.DB) {
 
 	for i := 0; i < 20; i++ {
 		log := model.AuditLog{
-			User:      users[rand.Intn(len(users))],
-			Action:    actions[rand.Intn(len(actions))],
-			Target:    fmt.Sprintf("Resource-%d", rand.Intn(100)),
-			Detail:    fmt.Sprintf("Operation performed by %s", users[rand.Intn(len(users))]),
-			Result:    results[rand.Intn(len(results))],
+			User:   users[rand.Intn(len(users))],
+			Action: actions[rand.Intn(len(actions))],
+			Target: fmt.Sprintf("Resource-%d", rand.Intn(100)),
+			Detail: fmt.Sprintf("Operation performed by %s", users[rand.Intn(len(users))]),
+			Result: results[rand.Intn(len(results))],
 		}
 		db.Create(&log)
-		
+
 		// Update CreatedAt
 		db.Model(&log).Update("created_at", time.Now().Add(-time.Duration(rand.Intn(96))*time.Hour))
 	}

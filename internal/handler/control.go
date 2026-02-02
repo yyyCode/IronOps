@@ -1,18 +1,21 @@
 package handler
 
 import (
+	"IronOps/internal/pkg/logger"
+	"IronOps/internal/pkg/response"
 	"IronOps/internal/service"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 func ControlInstanceHandler(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		response.ErrorWithStatus(c, http.StatusBadRequest, response.CodeParamError, "invalid id")
 		return
 	}
 
@@ -20,14 +23,19 @@ func ControlInstanceHandler(c *gin.Context) {
 		Action string `json:"action"` // start, stop, restart
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ErrorWithStatus(c, http.StatusBadRequest, response.CodeParamError, err.Error())
 		return
 	}
 
 	if err := service.ControlInstance(uint(id), req.Action); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logger.Error("ControlInstance failed",
+			zap.Uint("instance_id", uint(id)),
+			zap.String("action", req.Action),
+			zap.Error(err),
+		)
+		response.ErrorWithStatus(c, http.StatusInternalServerError, response.CodeServerBusy, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "action executed"})
+	response.Success(c, gin.H{"message": "action executed"})
 }
